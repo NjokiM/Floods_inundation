@@ -1,0 +1,610 @@
+{
+ "site": "nairobi",
+ "name": "Nairobi River corridor",
+ "kicker": "Urban flash flood · Nairobi, Kenya",
+ "lede": "Raise the Nairobi, Mathare and Ngong rivers and the water finds the ravines first — Mathare, Kiambiu, Dandora and Mukuru sit in them. Every level answers the same question: what is under water, and what should the response do?",
+ "river_label": "River stage above bank",
+ "stage_note": "Stage = metres above the normal channel waterline of the Nairobi / Mathare / Ngong river system.",
+ "bbox": [
+  36.7,
+  -1.4,
+  36.99,
+  -1.1
+ ],
+ "nx": 1077,
+ "nz": 1107,
+ "dx": 29.967611483579567,
+ "dz": 29.96585365853657,
+ "wid_m": 32275.117567815196,
+ "hei_m": 33172.19999999998,
+ "origin_cm": 145269,
+ "lat_c": -1.25,
+ "stage_max": 4.5,
+ "hist_marks": [
+  [
+   "6 Mar 2026",
+   3.3
+  ],
+  [
+   "OND 2023 El Niño",
+   2.1
+  ]
+ ],
+ "phases": [
+  {
+   "label": "Normal",
+   "stage": 0.0,
+   "why": "Rivers inside their banks. Seasonal showers keep the city wet but the <b>ravine neighbourhoods</b> stay dry: Mathare, Mukuru and Kibera sit metres above their channels."
+  },
+  {
+   "label": "Watch",
+   "stage": 1.2,
+   "why": "<b>Ravines wet first.</b> <span class='t'>Mathare and Mukuru's streamside lanes</span> flood: informal homes sit <b>directly at the water's edge</b>, where the nearest drain is the river itself."
+  },
+  {
+   "label": "Mobilize",
+   "stage": 2.0,
+   "why": "<b>Drains are the bottleneck.</b> Storm drains clog with silt and garbage, so <span class='a'>streets flood at half the depth</span> as they would if they were clear. Crews stage on the arterials."
+  },
+  {
+   "label": "Evacuate",
+   "stage": 2.8,
+   "why": "<b>Move people, not things.</b> <span class='r'>Order evacuation out of riparian strips first</span> (Mathare Valley, Mukuru B, Kibera sidestreets): they are the first to lose escape routes."
+  },
+  {
+   "label": "Extreme",
+   "stage": 3.6,
+   "why": "<b>Lifelines failure.</b> Mombasa Road / Uhuru Highway sections shut, power substations isolate, and relief becomes <span class='r'>boat-and-air</span>. This is the <b class='w'>6 Mar 2026</b> profile."
+  }
+ ],
+ "scenarios": [
+  {
+   "id": "seasonal",
+   "label": "Seasonal heavy rains",
+   "blockage": 0.88,
+   "curve": [
+    [
+     0.0,
+     0.05
+    ],
+    [
+     0.07,
+     0.25
+    ],
+    [
+     0.2,
+     0.65
+    ],
+    [
+     0.42,
+     1.0
+    ],
+    [
+     0.72,
+     0.85
+    ],
+    [
+     1.0,
+     0.35
+    ]
+   ]
+  },
+  {
+   "id": "elnino",
+   "label": "El Niño extreme",
+   "blockage": 0.62,
+   "curve": [
+    [
+     0.0,
+     0.55
+    ],
+    [
+     0.07,
+     0.95
+    ],
+    [
+     0.12,
+     1.0
+    ],
+    [
+     0.55,
+     0.95
+    ],
+    [
+     1.0,
+     0.25
+    ]
+   ]
+  }
+ ],
+ "cameras": [
+  {
+   "id": "wide",
+   "name": "Wide",
+   "lat": -1.245,
+   "lon": 36.838,
+   "alt": 14800,
+   "pitch": 55
+  },
+  {
+   "id": "mathare",
+   "name": "Mathare",
+   "lat": -1.2515,
+   "lon": 36.8715,
+   "alt": 3900,
+   "pitch": 57
+  },
+  {
+   "id": "mukuru",
+   "name": "Mukuru kwa Njenga",
+   "lat": -1.3105,
+   "lon": 36.892,
+   "alt": 4200,
+   "pitch": 57
+  },
+  {
+   "id": "kibera",
+   "name": "Kibera",
+   "lat": -1.3135,
+   "lon": 36.789,
+   "alt": 4400,
+   "pitch": 57
+  },
+  {
+   "id": "dandora",
+   "name": "Dandora",
+   "lat": -1.262,
+   "lon": 36.916,
+   "alt": 4500,
+   "pitch": 57
+  },
+  {
+   "id": "high",
+   "name": "High ground (Upper Hill)",
+   "lat": -1.2995,
+   "lon": 36.803,
+   "alt": 3300,
+   "pitch": 55
+  }
+ ],
+ "settlements": [
+  {
+   "name": "Mathare",
+   "pop": 190000,
+   "informal": true,
+   "x": 2559.7507036546767,
+   "z": -221.1480000000002,
+   "r_m": 1500,
+   "aspect": 1.85,
+   "deg": 38,
+   "mask_n": 5163,
+   "thresh_med": 23.89,
+   "thresh_p10": 3.87,
+   "elev": 17042.0
+  },
+  {
+   "name": "Kiambiu",
+   "pop": 35000,
+   "informal": true,
+   "x": 1502.462369536286,
+   "z": -2432.628000000002,
+   "r_m": 420,
+   "aspect": 1.3,
+   "deg": 10,
+   "mask_n": 521,
+   "thresh_med": 35.56,
+   "thresh_p10": 30.92,
+   "elev": 18332.0
+  },
+  {
+   "name": "Eastleigh",
+   "pop": 60000,
+   "informal": false,
+   "x": 500.82078984542864,
+   "z": -3096.072000000003,
+   "r_m": 700,
+   "aspect": 1.2,
+   "deg": 15,
+   "mask_n": 1485,
+   "thresh_med": 48.36,
+   "thresh_p10": 40.144,
+   "elev": 19479.0
+  },
+  {
+   "name": "Dandora",
+   "pop": 80000,
+   "informal": false,
+   "x": 7901.8391286717915,
+   "z": -1326.8880000000013,
+   "r_m": 900,
+   "aspect": 1.35,
+   "deg": 40,
+   "mask_n": 2262,
+   "thresh_med": 25.11,
+   "thresh_p10": 9.27,
+   "elev": 13843.0
+  },
+  {
+   "name": "Mukuru kwa Njenga",
+   "pop": 210000,
+   "informal": true,
+   "x": 5008.207898454287,
+   "z": -6745.013999999994,
+   "r_m": 1600,
+   "aspect": 2.0,
+   "deg": 55,
+   "mask_n": 5239,
+   "thresh_med": 31.69,
+   "thresh_p10": 3.31,
+   "elev": 17220.0
+  },
+  {
+   "name": "Mukuru kwa Reuben",
+   "pop": 70000,
+   "informal": true,
+   "x": 6232.436495854487,
+   "z": -5528.700000000005,
+   "r_m": 900,
+   "aspect": 1.6,
+   "deg": 40,
+   "mask_n": 2319,
+   "thresh_med": 29.42,
+   "thresh_p10": 15.4,
+   "elev": 16079.0
+  },
+  {
+   "name": "Kibera",
+   "pop": 170000,
+   "informal": true,
+   "x": -6232.436495853696,
+   "z": -6855.588000000006,
+   "r_m": 1300,
+   "aspect": 1.9,
+   "deg": 30,
+   "mask_n": 4420,
+   "thresh_med": 54.765,
+   "thresh_p10": 16.728,
+   "elev": 28006.0
+  },
+  {
+   "name": "Gikomba",
+   "pop": 8000,
+   "informal": true,
+   "x": 0.0,
+   "z": -4091.237999999991,
+   "r_m": 320,
+   "aspect": 1.2,
+   "deg": 80,
+   "mask_n": 307,
+   "thresh_med": 40.56,
+   "thresh_p10": 33.584,
+   "elev": 18210.0
+  },
+  {
+   "name": "Upper Hill",
+   "pop": 4000,
+   "informal": false,
+   "x": -4674.327371890668,
+   "z": -5473.413000000011,
+   "r_m": 450,
+   "aspect": 1.2,
+   "deg": 10,
+   "mask_n": 584,
+   "thresh_med": 13.44,
+   "thresh_p10": 5.336,
+   "elev": 27831.0
+  },
+  {
+   "name": "Nairobi CBD",
+   "pop": 12000,
+   "informal": false,
+   "x": -2504.1039492271434,
+   "z": -3870.089999999991,
+   "r_m": 600,
+   "aspect": 1.35,
+   "deg": 25,
+   "mask_n": 1083,
+   "thresh_med": 13.83,
+   "thresh_p10": 9.1,
+   "elev": 22889.0
+  },
+  {
+   "name": "Kilimani",
+   "pop": 30000,
+   "informal": false,
+   "x": -7456.665093253896,
+   "z": -4312.385999999991,
+   "r_m": 800,
+   "aspect": 1.3,
+   "deg": 5,
+   "mask_n": 1736,
+   "thresh_med": 164.85,
+   "thresh_p10": 10.6,
+   "elev": 31469.0
+  },
+  {
+   "name": "Karen",
+   "pop": 12000,
+   "informal": false,
+   "x": -13021.340535980355,
+   "z": -8293.049999999996,
+   "r_m": 1100,
+   "aspect": 1.6,
+   "deg": 30,
+   "mask_n": 3199,
+   "thresh_med": 32.51,
+   "thresh_p10": 6.61,
+   "elev": 37988.0
+  }
+ ],
+ "facilities": [
+  {
+   "name": "Kenyatta National Hospital",
+   "k": "hospital",
+   "x": -4362.705547097903,
+   "z": -5561.872200000002,
+   "thresh": 465,
+   "out": 27662,
+   "elev": 28127
+  },
+  {
+   "name": "Mama Lucy Kibaki Hospital",
+   "k": "hospital",
+   "x": 5319.82972324705,
+   "z": -6855.588000000006,
+   "thresh": 3681,
+   "out": 13803,
+   "elev": 17484
+  },
+  {
+   "name": "Mbagathi County Hospital",
+   "k": "hospital",
+   "x": -7857.321725130081,
+   "z": -6170.029200000008,
+   "thresh": 6921,
+   "out": 24816,
+   "elev": 31737
+  },
+  {
+   "name": "Pumwani Maternity",
+   "k": "hospital",
+   "x": 356.1392283344743,
+   "z": -3958.549200000006,
+   "thresh": 4200,
+   "out": 14746,
+   "elev": 18946
+  },
+  {
+   "name": "Mathare North Health Centre",
+   "k": "clinic",
+   "x": 2270.387580632768,
+   "z": 586.0422000000091,
+   "thresh": 650,
+   "out": 16574,
+   "elev": 17224
+  },
+  {
+   "name": "Gikomba Market",
+   "k": "market",
+   "x": -77.90545619838866,
+   "z": -4146.52500000001,
+   "thresh": 3744,
+   "out": 14746,
+   "elev": 18490
+  },
+  {
+   "name": "Dandora Primary School",
+   "k": "school",
+   "x": 9571.241761489888,
+   "z": -2045.6189999999956,
+   "thresh": 6647,
+   "out": 5807,
+   "elev": 12454
+  },
+  {
+   "name": "Toi Primary School, Kibera",
+   "k": "school",
+   "x": -6989.232356064355,
+   "z": -6247.431,
+   "thresh": 4105,
+   "out": 26097,
+   "elev": 30108
+  },
+  {
+   "name": "Nairobi Water Works — Kikuyu",
+   "k": "water",
+   "x": -13466.51457139904,
+   "z": -884.5920000000008,
+   "thresh": 25525,
+   "out": 18402,
+   "elev": 43927
+  },
+  {
+   "name": "Moi Forces Academy",
+   "k": "school",
+   "x": 2559.7507036546767,
+   "z": -1990.3320000000017,
+   "thresh": 1518,
+   "out": 14746,
+   "elev": 16264
+  }
+ ],
+ "shelters": [
+  {
+   "name": "High ground near Mathare",
+   "x": 3041.7125655833242,
+   "z": 164.81219512195094,
+   "lon": 36.87233054781801,
+   "lat": -1.248509485094851,
+   "thresh": 10834,
+   "out": 6515,
+   "elev": 17349
+  },
+  {
+   "name": "High ground near Kiambiu",
+   "x": 854.0769272820162,
+   "z": -3071.5,
+   "lon": 36.85267409470752,
+   "lat": -1.2777777777777777,
+   "thresh": 5117,
+   "out": 14746,
+   "elev": 19863
+  },
+  {
+   "name": "High ground near Eastleigh",
+   "x": 44.95141722536755,
+   "z": -2771.841463414632,
+   "lon": 36.84540389972145,
+   "lat": -1.2750677506775068,
+   "thresh": 6095,
+   "out": 14746,
+   "elev": 20841
+  },
+  {
+   "name": "High ground near Dandora",
+   "x": 8555.753078561966,
+   "z": -2052.660975609757,
+   "lon": 36.92187558031569,
+   "lat": -1.2685636856368563,
+   "thresh": 8589,
+   "out": 5807,
+   "elev": 14396
+  },
+  {
+   "name": "High ground near Mukuru kwa Njenga",
+   "x": 5289.283426851793,
+   "z": -6697.368292682924,
+   "lon": 36.892525533890435,
+   "lat": -1.310569105691057,
+   "thresh": 5348,
+   "out": 13803,
+   "elev": 19151
+  },
+  {
+   "name": "High ground near Mukuru kwa Reuben",
+   "x": 5678.862376138326,
+   "z": -4869.451219512193,
+   "lon": 36.89602599814299,
+   "lat": -1.2940379403794038,
+   "thresh": 3730,
+   "out": 13803,
+   "elev": 17533
+  },
+  {
+   "name": "High ground near Kibera",
+   "x": -6637.825943612876,
+   "z": -7596.343902439021,
+   "lon": 36.78535747446611,
+   "lat": -1.3186991869918698,
+   "thresh": 12043,
+   "out": 16564,
+   "elev": 28607
+  },
+  {
+   "name": "High ground near Gikomba",
+   "x": -644.3036468969622,
+   "z": -3461.0560975609733,
+   "lon": 36.839210770659236,
+   "lat": -1.28130081300813,
+   "thresh": 5724,
+   "out": 14746,
+   "elev": 20470
+  },
+  {
+   "name": "High ground near Upper Hill",
+   "x": -4090.5789675086125,
+   "z": -5918.256097560974,
+   "lon": 36.808245125348186,
+   "lat": -1.3035230352303522,
+   "thresh": 11046,
+   "out": 16564,
+   "elev": 27610
+  },
+  {
+   "name": "High ground near Nairobi CBD",
+   "x": -2981.7773426161675,
+   "z": -3491.021951219511,
+   "lon": 36.818207985143914,
+   "lat": -1.2815718157181573,
+   "thresh": 8410,
+   "out": 14746,
+   "elev": 23156
+  },
+  {
+   "name": "High ground near Kilimani",
+   "x": -8106.238906308274,
+   "z": -4330.065853658536,
+   "lon": 36.77216341689879,
+   "lat": -1.289159891598916,
+   "thresh": 18544,
+   "out": 14746,
+   "elev": 33290
+  },
+  {
+   "name": "High ground near Karen",
+   "x": -13470.441361869016,
+   "z": -8705.080487804873,
+   "lon": 36.723964716805945,
+   "lat": -1.3287262872628727,
+   "thresh": 13682,
+   "out": 25384,
+   "elev": 39066
+  }
+ ],
+ "road_manifest": [
+  {
+   "name": "Mombasa Road (A8)",
+   "class": 0,
+   "len_m": 31234.1
+  },
+  {
+   "name": "Uhuru Highway",
+   "class": 1,
+   "len_m": 5497.3
+  },
+  {
+   "name": "Thika Superhighway (A2)",
+   "class": 0,
+   "len_m": 15167.1
+  },
+  {
+   "name": "Juja Road",
+   "class": 1,
+   "len_m": 6144.9
+  },
+  {
+   "name": "Outer Ring Road",
+   "class": 1,
+   "len_m": 5065.2
+  },
+  {
+   "name": "Ngong Road",
+   "class": 1,
+   "len_m": 9904.3
+  },
+  {
+   "name": "Mbagathi Way",
+   "class": 2,
+   "len_m": 4993.9
+  },
+  {
+   "name": "Landhies Road",
+   "class": 2,
+   "len_m": 5554.3
+  }
+ ],
+ "bldg_source": "procedural (pop-anchored clusters)",
+ "imagery": "esri",
+ "attributions": {
+  "imagery": "© Esri, Maxar, Earthstar Geographics",
+  "rivers": "Rivers © HydroSHEDS/HydroRIVERS (WWF & partners), CC BY 4.0",
+  "buildings": "Buildings © Microsoft Global ML Building Footprints (MIT)",
+  "roads": "Roads © Esri World Transportation (where queried)",
+  "terrain": "Terrain © Copernicus GLO-30 (DLR/Airbus), Copernicus/ESA"
+ },
+ "info": {
+  "methodology": "<p><b>Model = Height Above Nearest Drainage (HAND)</b>. Every terrain cell's\nflood threshold is its vertical distance above the nearest stream, computed from Copernicus\nGLO-30 with a priority-flood. Move the stage slider s metres above the river and every cell\nwhose HAND &lt; s can hold standing water (depth ≈ s − HAND). Blocked drains in informal\nsettlements effectively drop that threshold — why ravine neighbourhoods flood first.</p>\n<p><b>Stats</b> recount baked footprint/road/facility objects against live depth fields each\nslider step. Displacement uses a depth-tiered rate. All figures are <b>planning\napproximations</b>, not official impact bulletins.</p>",
+  "sources": "<p><b>Terrain</b> © Copernicus GLO-30 (DLR/Airbus), via Copernicus / ESA ·\n<b>Imagery</b> © Esri, Maxar, Earthstar Geographics · <b>Buildings</b> © Microsoft Global ML\nBuilding Footprints (MIT) · <b>Rivers</b> © HydroSHEDS/HydroRIVERS (World Wildlife Fund &amp;\npartners, CC-BY) · <b>Roads</b> © Esri World Transportation where queried; fallback corridors\nhand-drawn · <b>Populations</b> KNBS 2019 census orders + widely-reported flood-response\nfigures.</p>\n<p>Built with vanilla Three.js and Django. Original design and code — no reference-site\ncontent reproduction.</p>",
+  "disclaimer": "<p><b>This is a teaching model.</b> Thresholds, settlement extents and\nimpact figures are calibrated approximations anchored to the well-documented 6 Mar 2026\nNairobi flood and to reported Tana River floods of 2023/2024. For operational decisions,\nuse Kenya's official agencies (Kenya Meteorological Department, NDMA, WRA, county\ngovernments).</p>"
+ }
+}

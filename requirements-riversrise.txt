@@ -1,0 +1,9 @@
+# Standalone deps for the 'When the Rivers Rise' flood simulation.
+# All wheels install without a system GDAL (rasterio bundles its own).
+Django==4.2.*
+rasterio>=1.3
+numpy>=1.24
+Pillow>=10.0
+requests>=2.31
+shapely>=2.0
+pyshp>=2.3

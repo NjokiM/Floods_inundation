@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 # Custom Dotfiles
 .DS_Store
@@ -6,3 +7,9 @@
 .env.*.local
 .idea/
 .vscode/
+=======
+.cache/
+__pycache__/
+*.pyc
+db.sqlite3
+>>>>>>> origin/main
