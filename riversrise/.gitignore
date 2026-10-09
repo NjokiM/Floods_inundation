@@ -2,3 +2,7 @@
 __pycache__/
 *.pyc
 db.sqlite3
+
+# Daily flood-data ingest output (regenerable via `manage.py fetch_flood_data`).
+# Excluded so a public repo does not accumulate a data-only commit every day.
+sim/static/data/observations/
