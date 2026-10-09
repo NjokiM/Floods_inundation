@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(../venv_floods/bin/pip:*)",
+      "Shell(mkdir:*)",
+      "Shell(curl -sSL -o sim/static/sim/vendor/three.module.js https://unpkg.com/three@0.160.0/build/three.module.js)",
+      "Shell(curl -sSL -o sim/static/sim/vendor/addons/controls/OrbitControls.js https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js)",
+      "Shell(/Library/Frameworks/Python.framework/Versions/3.11/bin/python3.11:*)",
+      "Shell(venv_floods/bin/python:*)",
+      "Shell(../venv_floods/bin/python:*)",
+      "Shell(sleep:*)",
+      "Shell(curl -s -o /dev/null -w index:%{http_code}  http://127.0.0.1:8077/)",
+      "Shell(curl -s -o /dev/null -w css:%{http_code}\\n http://127.0.0.1:8077/static/sim/css/app.css)",
+      "Shell(kill:*)",
+      "Shell(lsof -ti :8077 | xargs -I{} kill {} 2>/dev/null; sleep 1; lsof -ti :8077 || echo \"port 8077 clear\")",
+      "Shell(mkdir -p riversrise/.cache/dem && cp /private/tmp/commandcode-502/-Users-njoki-Desktop-Stuff-Doing-Projects-Floods-inundation/87106a07-224c-4b17-bb84-4b0990b0b171/scratchpad/demcache/*.tif riversrise/.cache/dem/ && ls -la riversrise/.cache/dem && cat riversrise/.gitignore 2>/dev/null; printf '.cache/\\n__pycache__/\\n*.pyc\\ndb.sqlite3\\n' > riversrise/.gitignore)",
+      "Shell(node --version)",
+      "Shell(for:*)",
+      "Shell(do:*)",
+      "Shell(done:*)",
+      "Shell(agent-browser:*)",
+      "Shell(grep:*)",
+      "Shell(AGENT_BROWSER_SESSION=wrr npm-run-agent-browser 2>/dev/null; agent-browser --help 2>&1 | grep -nE \"exec|channel|connect|attach|safari|chrome\" | head -20)",
+      "Shell(export:*)",
+      "Shell(export AGENT_BROWSER_SESSION=wrr; export AGENT_BROWSER_EXECUTABLE_PATH=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\"; agent-browser screenshot /private/tmp/commandcode-502/-Users-njoki-Desktop-Stuff-Doing-Projects-Floods-inundation/87106a07-224c-4b17-bb84-4b0990b0b171/scratchpad/shot1.png 2>&1; agent-browser console 2>&1 | head -30)",
+      "Shell(curl -s -o /dev/null -w manifest:%{http_code}\\n http://127.0.0.1:8077/static/data/nairobi/manifest.json)",
+      "Shell(curl -s -o /dev/null -w terrain:%{http_code}\\n http://127.0.0.1:8077/static/data/nairobi/terrain.bin)",
+      "Shell(export AGENT_BROWSER_SESSION=wrr; export AGENT_BROWSER_EXECUTABLE_PATH=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\"; agent-browser eval \"JSON.stringify({ready: !!window.__wrrReady, moduleErrs: performance.getEntriesByType('resource').filter(r=>r.name.includes('sim/js')||r.name.includes('data/')).map(r=>({n:r.name.split('/').slice(-2).join('/'),s:r.decodedBodySize??r.transferSize}))})\" 2>&1 | head -10)",
+      "Shell(export AGENT_BROWSER_SESSION=wrr; export AGENT_BROWSER_EXECUTABLE_PATH=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\"; agent-browser close 2>/dev/null; agent-browser open http://127.0.0.1:8077/ --init-script /private/tmp/commandcode-502/-Users-njoki-Desktop-Stuff-Doing-Projects-Floods-inundation/87106a07-224c-4b17-bb84-4b0990b0b171/scratchpad/errcollect.js && agent-browser wait --time 6000; agent-browser eval \"window.__errs && window.__errs.slice(0,6).join(' || ') || 'no errs'\")"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}
