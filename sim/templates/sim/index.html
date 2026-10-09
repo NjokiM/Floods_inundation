@@ -1,0 +1,101 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d0f0e">
+<title>WHEN THE RIVERS RISE — Nairobi &amp; Tana</title>
+<meta name="description" content="An interactive flood scenario and decision-support model for Nairobi and the Tana River: raise the water and see what floods first, who is exposed, and what the response should do at each level.">
+<link rel="stylesheet" href="{% static 'sim/css/app.css' %}">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d0f0e'/%3E%3Cpath d='M3 20c3.5 0 4.5-3 8-3s4.5 3 8 3 4.5-3 8-3' fill='none' stroke='%2345c4a0' stroke-width='3.4' stroke-linecap='round'/%3E%3Cpath d='M3 26c3.5 0 4.5-3 8-3s4.5 3 8 3 4.5-3 8-3' fill='none' stroke='%23bfe8da' stroke-width='2' stroke-linecap='round'/%3E%3Crect x='13.5' y='4' width='4' height='10' rx='1.6' fill='%23d8552e'/%3E%3C/svg%3E">
+<script type="importmap">
+{"imports":{
+  "three": "{% static 'sim/vendor/three.module.js' %}",
+  "three/addons/": "{% static 'sim/vendor/addons/' %}",
+  "app/": "{% static 'sim/js/' %}"
+}}
+</script>
+</head>
+<body>
+<div id="app">
+  <main id="world" aria-label="A filled relief model of Nairobi and the Tana River floodplain under a low sun; raising the water floods the low streets and informal settlements first">
+    <div id="loading">Filling the valley…</div>
+  </main>
+  <div class="vignette"></div>
+
+  <aside class="side">
+    <div class="brand">
+      <h1><span class="kicker" id="kicker">Nairobi · Tana River</span><b>WHEN THE<br>RIVERS RISE</b></h1>
+      <p class="lede" id="lede">Raise the river and watch the water find the low ground first. At every level, the same question: what is under water — and what should the response do?</p>
+    </div>
+    <div class="seg siteseg" id="siteSeg" role="group" aria-label="Study area">
+      <button data-site="nairobi" class="on">Nairobi</button>
+      <button data-site="tana">Tana River</button>
+    </div>
+    <div class="phases" id="phasebar" role="list" aria-label="Response phase"></div>
+    <div class="stats" id="stats">
+      <div class="stat hot"><i id="slLab">River</i><b id="s-stage">0.0<small>m</small></b></div>
+      <div class="stat"><i>Structures in water</i><b id="s-struct">0</b></div>
+      <div class="stat"><i>People affected</i><b id="s-people">0</b></div>
+      <div class="stat"><i>Roads cut</i><b id="s-roads">0<small>km</small></b></div>
+      <div class="stat"><i>Critical sites</i><b id="s-facil">0</b></div>
+    </div>
+    <p class="why" id="why" aria-live="polite"></p>
+    <div class="legend" id="legend" hidden></div>
+  </aside>
+
+  <section class="ctl card" aria-label="Controls">
+    <div class="r0">
+      <div class="grp"><span class="lab"><span>Scenario</span></span>
+        <div class="seg" id="segScen" role="group" aria-label="Scenario"></div></div>
+      <button class="playb" id="play" aria-pressed="false" title="Run the scenario (space)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path id="playPath" d="M8 5.5v13l10.5-6.5z"/></svg>
+      </button>
+      <div class="tools">
+        <button id="camBtn" title="Camera views">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.2 8.2 3h12.6a.2.2 0 0 1 .2.2V20.8a.2.2 0 0 1-.2.2H3.2A.2.2 0 0 1 3 20.8z"/><circle cx="12" cy="12" r="3.4"/></svg>
+        </button>
+        <button id="infoBtn" title="How it works">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.5 2.4c-.7.3-1.1.8-1.1 1.6v.3"/><path d="M12 16.9v.2"/></svg>
+        </button>
+        <button id="shareBtn" title="Copy link to this view">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16a3 3 0 0 0-2 .9l-6.9-4a3 3 0 1 0 0-1.8l7-4A3 3 0 1 0 15 5.7c0 .2 0 .5.1.7l-7 4a3 3 0 1 0 0 3.6l7 4c0 .2-.1.4-.1.7a3 3 0 1 0 3-2.7Z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="r1">
+      <div class="grp slide-g">
+        <span class="lab"><span id="mLabel">River level</span><span class="v" id="mV">0.0 m</span></span>
+        <div class="slide" id="slide" role="slider" tabindex="0" aria-label="River level">
+          <div class="tr"></div><div class="band"></div><div class="fl"></div><div class="kn"></div>
+        </div>
+      </div>
+    </div>
+    <div class="r2">
+      <div class="grp"><span class="lab"><span>Layer</span></span>
+        <div class="seg" id="segLayer" role="group" aria-label="Layer">
+          <button data-l="city" class="on">City</button>
+          <button data-l="hand">Risk</button>
+          <button data-l="response">Response</button>
+        </div></div>
+      <div class="grp"><span class="lab"><span>View</span></span>
+        <div class="seg" id="segView" role="group" aria-label="View mode">
+          <button data-v="lab" class="on">Lab</button>
+          <button data-v="exploded">Exploded</button>
+          <button data-v="studio">Studio</button>
+        </div></div>
+    </div>
+  </section>
+
+  <div class="br" id="br">
+    <div class="attr" id="attr">Basemap imagery © Esri, Maxar, Earthstar Geographics · Terrain © Copernicus GLO-30 · Buildings © Microsoft (MIT) · Rivers © HydroSHEDS</div>
+  </div>
+
+  <dialog id="info"><button class="x" data-close aria-label="Close">×</button><div id="infoBody"></div></dialog>
+  <dialog id="cams"><button class="x" data-close aria-label="Close">×</button><h2>Camera views</h2><div id="camList" class="camList"></div></dialog>
+  <div id="tip" aria-hidden="true"></div>
+</div>
+<script type="module" src="{% static 'sim/js/main.js' %}"></script>
+</body>
+</html>
