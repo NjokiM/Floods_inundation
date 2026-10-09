@@ -6,6 +6,8 @@ const $ = (id) => document.getElementById(id);
 const PH_COLORS = ["#7fbf95", "#e0c25e", "#e59944", "#e2573f", "#9d8bf0"];
 
 let refs = null;        // { world, slabs, viewer, flyTo, presetPose }
+let ticksFor = null;    // site the slider ticks were last built for
+let uiBound = false;    // window/persistent listeners attached only once
 
 // ------------------------------------------------------------------ helpers
 function phaseIdx(man) {
@@ -58,6 +60,11 @@ function drawSlider(man) {
     ticks.style.cssText = "position:absolute;inset:0;pointer-events:none;";
     slide.appendChild(ticks);
   }
+  // Ticks depend only on the manifest, but drawSlider ran on every refreshUI —
+  // i.e. ~60 full DOM rebuilds per second during scenario playback. Build them
+  // once per site; the per-frame path above only moves the fill and the knob.
+  if (ticksFor === man.site) return;
+  ticksFor = man.site;
   ticks.innerHTML = "";
   (man.phases || []).forEach((p, i) => {
     if (i === 0) return;
@@ -94,14 +101,32 @@ function renderScenarioSeg(man) {
   });
 }
 
-function bindScenario(man) {
-  bindSeg("segScen", (b) => {
-    const sc = (man.scenarios || []).find((x) => x.id === b.dataset.sc);
+// Bound ONCE, and reads the manifest at click time so a site switch can never
+// leave this holding a stale scenario list.
+let scenarioBound = false;
+function bindScenario() {
+  if (scenarioBound) return;
+  const el = $("segScen");
+  if (!el) return;
+  scenarioBound = true;
+  el.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b || !el.contains(b)) return;
+    const man = siteData()?.manifest;
+    const sc = (man?.scenarios || []).find((x) => x.id === b.dataset.sc);
     if (!sc) return;
     set({ scenario: sc.id, scenarioBlockage: sc.blockage ?? 1.0 });
     state.playT = 0;
     refreshUI();
   });
+}
+
+// Cheap per-frame sync: toggles the "on" class only, never rebuilds the DOM.
+function syncScenarioOn() {
+  const el = $("segScen");
+  if (!el) return;
+  el.querySelectorAll("button").forEach((b) =>
+    b.classList.toggle("on", b.dataset.sc === state.scenario));
 }
 
 function handleLayer(b) {
@@ -133,6 +158,10 @@ function handleSite(b) {
 // ------------------------------------------------------------------ stats
 function renderStats(man, stats, stage) {
   if (!stats) return;
+  // The headline river-stage readout was never written here — it updated
+  // structures, facilities, roads and people but left #s-stage on the template's
+  // hardcoded "0.0m" forever, so the app's primary number never moved.
+  $("s-stage").innerHTML = `${(stage ?? 0).toFixed(1)}<small>m</small>`;
   $("s-struct").innerHTML = fmtK(stats.wetB);
   $("s-facil").textContent = String(stats.facil);
   $("s-roads").innerHTML = `${stats.cutKm.toFixed(1)}<small>km</small>`;
@@ -187,7 +216,8 @@ function cameraPreset(id) {
   const man = siteData()?.manifest;
   if (!man || !refs?.flyTo) return;
   if (id === "stack") {
-    if (refs.stackPose) refs.flyTo(refs.stackPose(), 2.2);
+    const pose = refs.stackPose?.();
+    if (pose) refs.flyTo(pose, 2.2);   // stackPose() returns null before load
     return;
   }
   const cam = (man.cameras || []).find((c) => c.id === id);
@@ -246,16 +276,22 @@ function setStageFromEvent(man, clientX) {
   refreshUI();
 }
 
-function bindSlider(man) {
+// Bound once; the manifest is resolved at event time, so a site switch can never
+// leave the slider dragging against the previous site's stage_max.
+function bindSlider() {
   const slide = $("slide");
   let drag = false;
+  const apply = (clientX) => {
+    const man = siteData()?.manifest;
+    if (man) setStageFromEvent(man, clientX);
+  };
   slide.addEventListener("pointerdown", (e) => {
     drag = true;
     slide.setPointerCapture?.(e.pointerId);
-    setStageFromEvent(man, e.clientX);
+    apply(e.clientX);
   });
   slide.addEventListener("pointermove", (e) => {
-    if (drag) setStageFromEvent(man, e.clientX);
+    if (drag) apply(e.clientX);
   });
   slide.addEventListener("pointerup", () => { drag = false; });
   slide.addEventListener("pointercancel", () => { drag = false; });
@@ -268,8 +304,12 @@ function bindKeys() {
     if (e.key === " " && !e.repeat) { e.preventDefault(); togglePlay(); return; }
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       const d = (e.key === "ArrowRight" ? 0.1 : -0.1);
-      set({ playing: false, stage: Math.max(0, Math.min(man.stage_max,
-        +(state.stage + d).toFixed(2))) });
+      const ns = Math.max(0, Math.min(man.stage_max, +(state.stage + d).toFixed(2)));
+      // keep the scenario clock with the slider — dragging already did this.
+      // Without it, pressing play after an arrow-key nudge jumped back to the
+      // stale playT and silently undid the adjustment.
+      state.playT = man.stage_max ? ns / man.stage_max : 0;
+      set({ playing: false, stage: ns });
       refreshUI();
     }
   });
@@ -300,15 +340,23 @@ function setPlayIcon(playing) {
 export function initUI(refsIn) {
   refs = refsIn;
   const man = refsIn.data.manifest;
-  bindSeg("siteSeg", handleSite);
-  bindSeg("segLayer", handleLayer);
-  bindSeg("segView", handleView);
-  bindScenario(man);
+  // initUI runs on EVERY site switch, but these listeners attach to elements (and
+  // to window) that outlive the switch. Re-binding stacked duplicates: after N
+  // site switches one spacebar press fired N toggles — an even N looked like the
+  // key was dead — and one arrow key moved the stage N x 0.1 m. Bind once, then
+  // only rebuild the per-site scenario buttons.
+  if (!uiBound) {
+    bindSeg("siteSeg", handleSite);
+    bindSeg("segLayer", handleLayer);
+    bindSeg("segView", handleView);
+    bindScenario();
+    bindSlider();
+    $("play").onclick = togglePlay;
+    bindDialogs();
+    bindKeys();
+    uiBound = true;
+  }
   renderScenarioSeg(man);
-  bindSlider(man);
-  $("play").onclick = togglePlay;
-  bindDialogs();
-  bindKeys();
   refreshUI();
   return { stats: renderStats };
 }
@@ -332,8 +380,12 @@ export function refreshUI() {
   $("kicker").textContent = man.kicker || "";
   $("mLabel").textContent = man.river_label || "River level";
   drawSlider(man);
-  renderScenarioSeg(man);
-  bindScenario(man);
+  // Was renderScenarioSeg(man) + bindScenario(man). refreshUI runs every frame
+  // during playback (via advancePlay) and on every slider move, so that rebuilt
+  // the buttons ~60x/sec AND stacked a fresh click listener on #segScen each
+  // time: ~900 duplicates per playthrough, every one re-firing the handler.
+  // Buttons are built once per site now; here we only sync the "on" class.
+  syncScenarioOn();
   renderPhases(man);
   renderWhy(man);
   renderLegend(man);
