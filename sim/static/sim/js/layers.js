@@ -113,11 +113,17 @@ export class World {
 
   _buildTerrain() {
     const loader = new THREE.TextureLoader();
-    const tex = this.data.imageryUrl
-      ? loader.load(this.data.imageryUrl, (tl) => { tl.colorSpace = THREE.SRGBColorSpace; })
-      : null;
+    const tex = this.data.imageryUrl ? loader.load(this.data.imageryUrl) : null;
+    // Set colorSpace on the returned texture immediately: doing it inside onLoad
+    // can land after three.js has already uploaded the image, leaving the
+    // satellite imagery in the wrong colour space (washed out).
+    if (tex) tex.colorSpace = THREE.SRGBColorSpace;
     this.terrainMat = makeTerrainMaterial(tex);
     const mesh = new THREE.Mesh(this.gridGeo, this.terrainMat);
+    // Grid positions are all y=0 (heights come from aElev in the vertex shader),
+    // so the computed bounding sphere does not describe the rendered surface.
+    // Every other large mesh here already disables culling for the same reason.
+    mesh.frustumCulled = false;
     this.root.add(mesh);
     this.terrainMat.uniforms.uFogCol.value = new THREE.Color(FOGC);
     this.terrainMat.uniforms.uFogD.value = FOGD;
@@ -202,13 +208,17 @@ export class World {
       for (let e2 = 0; e2 < 2; e2++) {
         const vi = s + e2;
         const r = vi * 6;
-        const y = f[r + 4] + 0.35;
+        // baked f[] columns: x(m), z(m), thresh(cm), out(cm), elev(cm), class.
+        // The cm columns MUST be /100 — stats() and slabs.js both do it, this
+        // loader forgot. That parked every road/river ~100x too high and made
+        // step(thresh_cm, stage_m) never fire, so they could never turn wet.
+        const y = f[r + 4] / 100 + 0.35;
         pos[(s * 2 + e2) * 3] = f[r];
         pos[(s * 2 + e2) * 3 + 1] = 0;
         pos[(s * 2 + e2) * 3 + 2] = f[r + 1];
         ay[s * 2 + e2] = y;
-        af[(s * 2 + e2) * 3] = f[r + 2];
-        af[(s * 2 + e2) * 3 + 1] = f[r + 3];
+        af[(s * 2 + e2) * 3] = f[r + 2] / 100;
+        af[(s * 2 + e2) * 3 + 1] = f[r + 3] / 100;
         af[(s * 2 + e2) * 3 + 2] = f[r + 5];
       }
     }
@@ -273,7 +283,10 @@ export class World {
       pos[i * 3] = s.x;
       pos[i * 3 + 1] = (s.elev ?? 0) / 100 + 3.5;    // cm→m + lift above ground
       pos[i * 3 + 2] = s.z;
-      aM[i * 4] = (s.thresh_p10 ?? s.thresh_med ?? 0) * 100 / 100;  // stage metres
+      // settlements already carry stage METRES (bake.py divides by 100 when it
+      // writes thresh_med / thresh_p10) — unlike shelters and facilities, which
+      // are cm. The old `* 100 / 100` was a no-op left from a unit conversion.
+      aM[i * 4] = s.thresh_p10 ?? s.thresh_med ?? 0;
       aM[i * 4 + 1] = 2;                              // kind 2 = splat
       aM[i * 4 + 2] = 2.5 * (s.r_m ?? 900);           // world diameter ≈ ellipse span
       aM[i * 4 + 3] = 1.0;
@@ -320,7 +333,14 @@ export class World {
 
   _buildPlinth() {
     // dark slab under the diorama edges
-    const minE = Math.min(...this.data.terrain.elevM) ?? 0;
+    // NOTE: never spread elevM into Math.min(). It holds nx*nz = 1,192,239 values,
+    // and spreading that many as function arguments overflows the JS call stack
+    // (RangeError: Maximum call stack size exceeded), which killed the World
+    // constructor and left the whole 3D scene unrendered. Loop instead.
+    const elev = this.data.terrain.elevM;
+    let minE = Infinity;
+    for (let i = 0; i < elev.length; i++) if (elev[i] < minE) minE = elev[i];
+    if (!Number.isFinite(minE)) minE = 0;
     const H = 420;
     const top = Math.min(minE - 6, -2);
     const W = this.man.wid_m * 1.03, D = this.man.hei_m * 1.03;
@@ -378,15 +398,26 @@ export class World {
       const thresh = a[r + 6] / 100 * block;       // baked cm → stage metres
       if (thresh < stage) { wetB++; people += a[r + 10]; }
     }
-    // roads (segments cut): both endpoints under stage
+    // roads (segments cut). The baked polylines are COARSE — 3 to 8 vertices for
+    // roads up to 31 km long — so the old "both endpoints under stage" test almost
+    // never fired: a low-HAND vertex was nearly always adjacent to a high one, and
+    // "roads cut" read 0.0 km even with 21k structures underwater. Interpolate the
+    // crossing instead and count the submerged fraction of each segment.
     let cutM = 0;
     for (const ln of this.data.roads.lines) {
       const f = ln.f, m = ln.m;
       for (let s = 0; s < m - 1; s++) {
         const i1 = s * 6, i2 = (s + 1) * 6;
-        if (f[i1 + 2] / 100 < stage && f[i2 + 2] / 100 < stage) {
-          cutM += Math.hypot(f[i2] - f[i1], f[i2 + 1] - f[i1 + 1]);
+        const ta = f[i1 + 2] / 100, tb = f[i2 + 2] / 100;   // baked cm -> stage metres
+        if (ta >= stage && tb >= stage) continue;
+        const len = Math.hypot(f[i2] - f[i1], f[i2 + 1] - f[i1 + 1]);
+        let frac = 1;
+        if (ta >= stage || tb >= stage) {
+          const span = Math.abs(tb - ta) || 1e-6;
+          frac = Math.abs(stage - ta) / span;
+          if (tb < stage) frac = 1 - frac;   // wet end is the far one
         }
+        cutM += len * Math.max(0, Math.min(1, frac));
       }
     }
     let facil = 0;
