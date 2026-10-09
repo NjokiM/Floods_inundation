@@ -58,11 +58,11 @@ function presetPose(man, cam, y0 = 0) {
 }
 function stackPose() {
   const man = siteData()?.manifest;
-  const vv = man.site === "tana" ? 4.2 : 2.0;
+  if (!man) return null;                          // was an unguarded man.site deref
+  const vv = man.site === "tana" ? 4.2 : 2.0;     // vertical exaggeration (was dead)
   return {
     target: new THREE.Vector3(0, -3 * 520 * 0.5, 0),
-    pos: new THREE.Vector3(man.wid_m * 0.62, (man.site === "tana" ? 4.2 : 2.0) * 13500,
-      -man.hei_m * 0.42 - 3000),
+    pos: new THREE.Vector3(man.wid_m * 0.62, vv * 13500, -man.hei_m * 0.42 - 3000),
   };
 }
 
@@ -130,19 +130,39 @@ function onFrame(hi) {
   world.root.visible = !(state.view === "exploded" && spread > 0.92);
   world.update(state.stage);
 
+  // setStage also refreshes the slabs' uTime, so it has to run every frame. It
+  // used to sit inside the stage-change guard, which froze the slab pulses
+  // whenever the stage was static (e.g. parked in exploded view).
+  slabs?.setStage(state.stage, state.scenarioBlockage ?? 1.0);
   if (state.stage !== lastStage) {
     const stats = world.stats(state.stage);
     uiHooks?.stats?.(siteData()?.manifest, stats, state.stage);
-    slabs?.setStage(state.stage, state.scenarioBlockage ?? 1.0);
     lastStage = state.stage;
   }
   viewer.render();
 }
 
 // ---------------------------------------------------------- lifecycle
+function showFatal(err) {
+  loading.classList.remove("off");
+  loading.innerHTML =
+    `<b style="color:#e2573f">This scene failed to load.</b><br>` +
+    `<span style="opacity:.72;font-size:.85rem">${String(err?.message || err)}</span>`;
+}
+
 async function boot() {
-  viewer = new Viewer(host);
-  await switchSite(state.site, true);
+  // Without this catch, ANY failure (unbaked site, shader compile error, stack
+  // overflow in World) rejected boot() silently: onFrame() never ran, render()
+  // was never called, and the overlay sat on "Filling the valley…" forever with
+  // a blank screen and nothing to explain it.
+  try {
+    viewer = new Viewer(host);
+    await switchSite(state.site, true);
+  } catch (err) {
+    console.error("[riversrise] boot failed:", err);
+    showFatal(err);
+    return;
+  }
   loading.classList.add("off");
   onFrame();
 
@@ -151,6 +171,25 @@ async function boot() {
 }
 
 async function switchSite(site, first = false) {
+  loading.classList.remove("off");
+
+  // Load BEFORE tearing anything down. The old order disposed the working world
+  // first, so a failed fetch (e.g. a site with no baked data) left a blank screen
+  // with no way back short of a full reload.
+  const keepSite = world?.man?.site ?? null;
+  let data;
+  try {
+    data = siteData(site) || await loadSite(site);
+  } catch (err) {
+    console.error(`[riversrise] could not load site "${site}":`, err);
+    // direct write, not set(): set() would re-fire on("site") and recurse
+    if (keepSite) state.site = keepSite;
+    setHint(`could not load ${site} — is its data baked?`, 4200);
+    loading.classList.add("off");
+    throw err;
+  }
+  cacheSiteData(site, data);
+
   if (world) {
     world.root.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
@@ -161,10 +200,6 @@ async function switchSite(site, first = false) {
     viewer.markerMats = [];
     world = null; slabs = null;
   }
-  loading.classList.remove("off");
-
-  const data = siteData(site) || await loadSite(site);
-  cacheSiteData(site, data);
 
   world = new World(viewer.scene, data);
   slabs = new Slabs(world);
@@ -216,6 +251,8 @@ function medianAt(elevM, nx, nz) {
   return n ? sum / n : 0;
 }
 
-on("site", (s) => switchSite(s));
+// switchSite rethrows a failed load on purpose; swallow it here so a bad site
+// click logs instead of surfacing as an unhandled promise rejection.
+on("site", (s) => { switchSite(s).catch((e) => console.error("[riversrise] site switch:", e)); });
 
 boot();

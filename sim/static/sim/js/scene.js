@@ -89,13 +89,19 @@ export class Viewer {
     const top = new THREE.Color(view === "studio" ? SKY_TOP.studio : SKY_TOP.lab);
     const hor = new THREE.Color(view === "studio" ? SKY_HOR.studio : SKY_HOR.lab);
     this.skyMat.uniforms.top.value.copy(top);
-    this.skyMat.uniforms.hor.value.copy(view === "studio" ? new THREE.Color("#d8dee1") : hor);
-    this.scene.background = view === "studio" ? top : this.scene.background;
+    this.skyMat.uniforms.hor.value.copy(hor);
+    // was `view === "studio" ? top : this.scene.background` — the else branch
+    // re-assigned background to itself, so leaving Studio never restored the
+    // dark lab sky and the scene stayed washed out for the rest of the session.
+    this.scene.background = new THREE.Color(view === "studio" ? SKY_TOP.studio : SKY_TOP.lab);
     this.renderer.toneMappingExposure = view === "studio" ? 1.0 : 1.05;
     this.scene.fog.color.copy(new THREE.Color(view === "studio" ? "#d9dfdd" : FOGC));
     this.scene.fog.density = view === "studio" ? 0.000030 : FOGD;
     this.skyMat.uniforms.mixA.value = view === "studio" ? 1 : 0;
-    for (const m of this.markerMats) if (m.uniforms?.uPxScale != null) this.onResize();
+    // was `for (const m of this.markerMats) if (...) this.onResize();` — that ran
+    // a full renderer resize (setSize + updateProjectionMatrix + the whole marker
+    // loop) once PER marker material. onResize already updates every marker.
+    this.onResize();
   }
 
   registerMarkers(mats) {
