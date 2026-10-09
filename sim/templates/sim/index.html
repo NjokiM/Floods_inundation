@@ -30,8 +30,9 @@
       <p class="lede" id="lede">Raise the river and watch the water find the low ground first. At every level, the same question: what is under water — and what should the response do?</p>
     </div>
     <div class="seg siteseg" id="siteSeg" role="group" aria-label="Study area">
-      <button data-site="nairobi" class="on">Nairobi</button>
-      <button data-site="tana">Tana River</button>
+      {% for s in sites %}
+      <button data-site="{{ s.id }}"{% if forloop.first %} class="on"{% endif %}{% if not s.ready %} disabled title="not baked yet — run: python manage.py bake_{{ s.id }}"{% endif %}>{{ s.label }}</button>
+      {% endfor %}
     </div>
     <div class="phases" id="phasebar" role="list" aria-label="Response phase"></div>
     <div class="stats" id="stats">
