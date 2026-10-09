@@ -33,7 +33,11 @@ void main() {
   float thresh = aThresh * block;
   vWet = step(thresh, uStage);
   vHand = aThresh;
-  vDepth = (aOut + uStage - aElev) * vWet;
+  // depth must use the SAME effective threshold as the wet test above, or cells
+  // that flood only because of drain blockage get a negative depth and get
+  // discarded — making every blockage scenario look identical to the baseline.
+  // (aOut == aElev - aThresh, so this is unchanged when uBlock == 1.)
+  vDepth = (uStage - thresh) * vWet;
   vec3 p = position;
   p.y = aElev;
   vUv = aCellUv;
@@ -112,7 +116,7 @@ void main() {
   float thresh = aThresh * block;
   vWet = step(thresh, uStage);
   vHand = aThresh;
-  vDepth = (aOut + uStage - aElev) * vWet;
+  vDepth = (uStage - thresh) * vWet;   // same effective threshold as vWet
   vUv = aCellUv;
   vec3 p = position;
   p.y = aElev;
@@ -153,11 +157,19 @@ void main() {
   float block = mix(uBlock, 1.0, step(0.5, aSettle));
   float thresh = aThresh * block;
   float sub = thresh <= uStage ? 1.0 : 0.0;
-  vDepth = (aOut + uStage - aElev) * sub;
+  // Surface from the EFFECTIVE (blockage-adjusted) threshold, so the surface,
+  // the depth and the wet test all agree. Identical to aOut + uStage when
+  // uBlock == 1, because aOut == aElev - aThresh.
+  float surf = aElev - thresh + uStage;
+  vDepth = (surf - aElev) * sub;
   vUv = aCellUv;
   vec3 p = position;
   float wob = (sin(uTime * 1.6 + p.x * 0.031) + sin(uTime * 0.9 - p.z * 0.023)) * 0.045;
-  p.y = (aOut + uStage) * sub + wob * sub + (aElev * (1.0 - sub)) - (1.0 - sub) * 90000.0;
+  // Dry vertices now sit ON the terrain instead of 90 km below it. The fragment
+  // shader discards them (vDepth == 0), and shoreline triangles taper cleanly to
+  // the waterline instead of stretching into shards: the old sink was
+  // -90000 * scale.y(2.0) = -180000, past the camera's 160000 far plane.
+  p.y = surf * sub + wob * sub + aElev * (1.0 - sub);
   vec4 wp = modelMatrix * vec4(p, 1.0);
   vWorld = wp.xyz;
   gl_Position = projectionMatrix * viewMatrix * wp;
@@ -215,7 +227,7 @@ void main() {
   float block = mix(uBlock, 1.0, step(0.5, iDim.w));
   float thresh = iHand.x * block;
   vWet = step(thresh, uStage);
-  vDepth = max(0.0, (iHand.y + uStage) - iHand.z) * vWet;
+  vDepth = max(0.0, uStage - thresh) * vWet;   // was iHand.y + uStage - iHand.z: ignored blockage
   vClass = iDim.w;
   vH = iDim.z;
   float co = cos(iPos.z), si = sin(iPos.z);
@@ -223,7 +235,10 @@ void main() {
                      (position.y + 0.5) * iDim.z * (1.0 - 0.90 * uFlat),
                      position.z * iDim.y);
   vec3 rr = vec3(co * scaled.x + si * scaled.z, scaled.y, -si * scaled.x + co * scaled.z);
-  vec3 p = rr + vec3(iPos.x, iPos.y + iHand.z, iPos.y);
+  // iPos is (x, z, rot) — iPos.y is the NORTH coordinate, not a height. Adding it
+  // to the elevation threw every building vertically by its own z (±16 km on this
+  // site), scattering the whole city layer out of frame. Base height is iHand.z.
+  vec3 p = rr + vec3(iPos.x, iHand.z, iPos.y);
   vec3 n = normal;
   vNormalW = normalize(vec3(co * n.x + si * n.z, n.y, -si * n.x + co * n.z));
   vec4 wp = modelMatrix * vec4(p, 1.0);
@@ -388,7 +403,11 @@ void main() {
   float block = mix(uBlock, 1.0, step(0.5, aSettle));
   vWet = step(aThresh * block, uStage);
   vHand = aThresh;
-  vDepth = (aOut + uStage - aElev) * (uStage > 0.0 ? 1.0 : 0.0);
+  // was (aOut + uStage - aElev): that is uStage - aThresh, the UNADJUSTED
+  // threshold, while vWet above uses aThresh * block. Under the seasonal (0.88)
+  // and El Niño (0.62) scenarios the extra cells passed the wet test but came out
+  // with negative depth, so the exploded flood slab disagreed with the main view.
+  vDepth = (uStage - aThresh * block) * (uStage > 0.0 ? 1.0 : 0.0);
   vec3 p = position;
   p.y = 0.0;                       // slabs are flat planes
   vUv = aCellUv;
