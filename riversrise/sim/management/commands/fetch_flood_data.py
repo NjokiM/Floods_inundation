@@ -184,19 +184,70 @@ def _discharge_signal(series: list, times: list) -> dict:
     today = dt.date.today().isoformat()
     obs = [v for t, v in zip(times, series)
            if t <= today and isinstance(v, (int, float))]
-    fct = [v for t, v in zip(times, series)
+    # keep (date, value) pairs so the peak's date comes from the FORECAST window;
+    # matching on value alone returned the first occurrence anywhere in the series.
+    fct = [(t, v) for t, v in zip(times, series)
            if t > today and isinstance(v, (int, float))]
+    # An all-zero series means GloFAS has no channel at this grid cell (true of
+    # Bura East), NOT a dry river. Say so rather than emitting 0.0 m³/s as if it
+    # were a measurement someone could read as "no flood risk here".
+    if vals and max(vals) <= 0.0:
+        return {"status": "off_glofas_network",
+                "note": "discharge is 0 across the whole window: this point is not on a "
+                        "GloFAS-modelled channel, so it carries no flood signal at all."}
     base = sorted(obs)[len(obs) // 2] if obs else None  # median of observed window
-    peak = max(fct) if fct else None
-    peak_day = next((t for t, v in zip(times, series) if v == peak), None) if fct else None
-    if base and peak is not None:
-        ratio = peak / base if base else None
-        status = ("rising" if ratio and ratio >= 3 else
-                  "elevated" if ratio and ratio >= 1.5 else "steady")
+    peak_pair = max(fct, key=lambda tv: tv[1]) if fct else None
+    # fct rows are (date, value), so the value comes SECOND. Getting this the
+    # other way round assigns the date string to `peak` and dies on peak / base.
+    peak_day, peak = peak_pair if peak_pair else (None, None)
+    # `base == 0.0` is falsy but a perfectly valid median, so test against None.
+    if base is not None and peak is not None:
+        if base < MIN_BASELINE_M3S:
+            # Live example: Mukuru 0.03 -> 1.52 m3/s computes as "x50 rising", but
+            # both numbers sit below what GloFAS can resolve on a small urban
+            # stream. Ranking that above a genuine x8 on the Tana is nonsense, so
+            # report it as low-confidence instead of as the loudest alarm we have.
+            ratio, status = None, "unreliable_baseline"
+        else:
+            ratio = peak / base
+            status = ("rising" if ratio >= 3 else
+                      "elevated" if ratio >= 1.5 else "steady")
     else:
         ratio, status = None, "insufficient_data"
     return {"baseline_m3s": base, "forecast_peak_m3s": peak, "peak_date": peak_day,
             "peak_over_baseline": round(ratio, 2) if ratio else None, "status": status}
+
+
+# --- staleness ---------------------------------------------------------------
+# The cron job runs on a laptop: a lid closed at 06:00 leaves a silent hole in
+# the series that nothing would ever notice. These helpers let the app see the
+# gap and catch up by itself on server start.
+
+STALE_AFTER_HOURS = 26  # just over a day, so a single missed cron run trips it
+
+# Below this, a peak/baseline RATIO is arithmetic noise rather than hydrology:
+# GloFAS cannot resolve flow on small urban streams, so 0.03 -> 1.52 m3/s would
+# otherwise outrank a real x8 rise on the Tana.
+MIN_BASELINE_M3S = 1.0
+
+
+def latest_age_hours(site: str) -> float | None:
+    """Age of <site>/latest.json in hours, or None if missing/unreadable."""
+    p = OUT_ROOT / site / "latest.json"
+    if not p.exists():
+        return None
+    try:
+        gen = dt.datetime.fromisoformat(json.loads(p.read_text())["generated_utc"])
+    except Exception:  # noqa: BLE001 - unreadable counts as missing
+        return None
+    if gen.tzinfo is None:
+        gen = gen.replace(tzinfo=dt.timezone.utc)
+    return (dt.datetime.now(dt.timezone.utc) - gen).total_seconds() / 3600.0
+
+
+def stale_sites(hours: float = STALE_AFTER_HOURS) -> list[str]:
+    return [s for s in POINTS
+            if (a := latest_age_hours(s)) is None or a > hours]
 
 
 class Command(BaseCommand):
@@ -205,6 +256,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--site", default="all",
                             help="nairobi | tana | all (default: all)")
+        parser.add_argument("--if-stale", action="store_true",
+                            help=f"fetch only sites older than {STALE_AFTER_HOURS}h and "
+                                 "exit quietly when none are; used by the start-up catch-up")
         parser.add_argument("--past", type=int, default=30,
                             help="days of history to pull (default 30)")
         parser.add_argument("--forecast", type=int, default=30,
@@ -219,6 +273,14 @@ class Command(BaseCommand):
             sys.exit(2)
 
         log = (lambda *a: None) if opts["quiet"] else (lambda *a: self.stdout.write(" ".join(str(x) for x in a)))
+
+        if opts["if_stale"]:
+            stale = [s for s in sites if s in stale_sites()]
+            if not stale:
+                log(f"fresh: every site updated within {STALE_AFTER_HOURS}h, nothing to fetch")
+                return
+            sites = stale
+            log(f"catching up stale site(s): {', '.join(sites)}")
         now = dt.datetime.now(dt.timezone.utc)
         failures: list[str] = []
 
@@ -289,7 +351,12 @@ class Command(BaseCommand):
                 } for pid, r in points.items()},
                 "gdacs_alerts": len(alerts),
             })
-            series = series[-730:]  # cap ~2 years of daily runs
+            # One row per DAY, not per run: a manual re-run after the 06:00 cron
+            # job must replace that day's row. Dedupe across the WHOLE list rather
+            # than just today, so rows duplicated before this guard existed get
+            # cleaned up too. Later row wins; sorted so the file stays chronological.
+            by_day = {str(r.get("generated_utc", ""))[:10]: r for r in series}
+            series = [by_day[k] for k in sorted(by_day)][-730:]  # ~2 years of days
             sfile.write_text(json.dumps(series, indent=1, ensure_ascii=False))
             log(f"-> {d/'latest.json'}")
 
