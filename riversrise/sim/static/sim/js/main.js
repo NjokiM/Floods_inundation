@@ -6,6 +6,7 @@ import { Slabs } from "./slabs.js";
 import { state, set, on, cacheSiteData, siteData } from "./state.js";
 import { loadSite } from "./loader.js";
 import { initUI, refreshUI, setHint } from "./ui.js";
+import { loadLive } from "./live.js";
 
 const host = document.getElementById("world");
 const loading = document.getElementById("loading");
@@ -235,6 +236,11 @@ async function switchSite(site, first = false) {
   uiHooks = initUI({
     data, world, slabs, viewer, flyTo, presetPose, stackPose, y0,
   });
+  // Live river watch panel: independent async fetch that never throws into
+  // this path — a failed ingest degrades the panel, never the scene. Not
+  // awaited on purpose: the 3D view must not wait on the observation JSON.
+  loadLive(site, { flyTo, presetPose, y0 })
+    .catch((e) => console.warn("[riversrise] live panel:", e));
   set({ ready: true });
   lastStage = -1;
   refreshUI();
